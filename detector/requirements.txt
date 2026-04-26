@@ -1,0 +1,11 @@
+# Web framework for the dashboard
+flask==3.0.0
+
+# HTTP requests for Slack webhook calls
+requests==2.31.0
+
+# YAML config file parsing
+pyyaml==6.0.1
+
+# System metrics (CPU/memory) for the dashboard
+psutil==5.9.6
