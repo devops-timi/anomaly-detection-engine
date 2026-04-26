@@ -1,0 +1,48 @@
+# ─────────────────────────────────────────
+# PATHS
+# ─────────────────────────────────────────
+log_path: "/var/log/nginx/hng-access.log"     # where nginx writes logs
+audit_log_path: "/var/log/detector-audit.log" # where we write our audit log
+
+# ─────────────────────────────────────────
+# SLIDING WINDOW
+# ─────────────────────────────────────────
+window_seconds: 60          # look at the last 60 seconds for rate calculations
+
+# ─────────────────────────────────────────
+# BASELINE
+# ─────────────────────────────────────────
+baseline_window_minutes: 30         # use last 30 minutes of data for baseline
+baseline_recalc_interval: 60        # recalculate baseline every 60 seconds
+baseline_min_samples: 30            # need at least 30 samples before trusting baseline
+baseline_floor_mean: 1.0            # never let mean go below 1.0 req/s (avoids division issues)
+baseline_floor_stddev: 0.5          # never let stddev go below 0.5
+
+# ─────────────────────────────────────────
+# ANOMALY DETECTION THRESHOLDS
+# ─────────────────────────────────────────
+zscore_threshold: 3.0       # flag if z-score exceeds this
+rate_multiplier: 5.0        # flag if rate is more than 5x the baseline mean
+error_rate_multiplier: 3.0  # tighten thresholds if error rate is 3x baseline error rate
+
+# ─────────────────────────────────────────
+# BAN / UNBAN SCHEDULE (seconds)
+# ─────────────────────────────────────────
+ban_durations:              # backoff schedule in minutes, converted to seconds
+  - 600        # 10 minutes
+  - 1800       # 30 minutes
+  - 7200       # 2 hours
+  - -1         # permanent (-1 means never auto-unban)
+
+# ─────────────────────────────────────────
+# SLACK
+# ─────────────────────────────────────────
+slack_webhook_url: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+# Replace the above with your actual Slack webhook URL
+
+# ─────────────────────────────────────────
+# DASHBOARD
+# ─────────────────────────────────────────
+dashboard_host: "0.0.0.0"   # listen on all interfaces
+dashboard_port: 8080         # dashboard served on port 8080
+dashboard_refresh_seconds: 3 # how often the browser refreshes
