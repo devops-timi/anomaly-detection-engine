@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+
+  # ─────────────────────────────────────────────
+  # NGINX — reverse proxy in front of Nextcloud
+  # ─────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine                        # lightweight official nginx image
+    container_name: hng-nginx
+    ports:
+      - "80:80"                                # expose HTTP on the host
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro   # our custom config (read-only inside container)
+      - hng-nginx-logs:/var/log/nginx          # NAMED VOLUME: nginx writes logs here
+    depends_on:
+      - nextcloud                              # start nextcloud first
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  # NEXTCLOUD — the pre-built image, do NOT change
+  # ─────────────────────────────────────────────
+  nextcloud:
+    image: kefaslungu/hng-nextcloud            # the exact image given in the task
+    container_name: hng-nextcloud
+    volumes:
+      - nextcloud-data:/var/www/html           # nextcloud data persistence
+      - hng-nginx-logs:/var/log/nginx:ro       # mounts same log volume READ-ONLY
+    environment:
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost    # add VPS IP here
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────
+  # DETECTOR — our custom Python daemon
+  # ─────────────────────────────────────────────
+  detector:
+    build:
+      context: ./detector                      # build from our detector/ folder
+      dockerfile: Dockerfile                   # use the Dockerfile in that folder
+    container_name: hng-detector
+    volumes:
+      - hng-nginx-logs:/var/log/nginx:ro       # reads nginx logs READ-ONLY
+    network_mode: host                         # needs host network to run iptables on the host
+    privileged: true                           # needed to run iptables commands
+    restart: unless-stopped
+    depends_on:
+      - nginx
+
+# ─────────────────────────────────────────────
+# VOLUMES — named volumes Docker manages
+# ─────────────────────────────────────────────
+volumes:
+  hng-nginx-logs:                              # THE required named volume for logs
+    name: HNG-nginx-logs                       # exact name required by the task spec
+  nextcloud-data:                              # nextcloud's own data
