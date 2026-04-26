@@ -61,7 +61,7 @@ class Unbanner:
                 self.blocker.unban_ip(ip)
 
                 # Send Slack notification
-                self.notifier.send_unban(()
+                self.notifier.send_unban(
                     ip=ip,
                     offense=offense,
                     ban_duration=duration
