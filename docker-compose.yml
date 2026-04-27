@@ -26,8 +26,6 @@ services:
     volumes:
       - nextcloud-data:/var/www/html           # nextcloud data persistence
       - hng-nginx-logs:/var/log/nginx:ro       # mounts same log volume READ-ONLY
-    environment:
-      - NEXTCLOUD_TRUSTED_DOMAINS=localhost    # add VPS IP here
     restart: unless-stopped
 
   # ─────────────────────────────────────────────
