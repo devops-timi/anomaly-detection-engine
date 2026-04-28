@@ -77,3 +77,5 @@ curl http://localhost:8080 # Dashboard responds
 ## Architecture
 See docs/architecture.png
 
+## Blog post
+https://dev.to/devopstimi/how-i-built-a-real-time-anomaly-detection-engine-for-a-cloud-storage-platform-30o3
