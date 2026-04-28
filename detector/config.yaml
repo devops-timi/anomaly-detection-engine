@@ -14,7 +14,7 @@ window_seconds: 60          # look at the last 60 seconds for rate calculations
 # ─────────────────────────────────────────
 baseline_window_minutes: 30         # use last 30 minutes of data for baseline
 baseline_recalc_interval: 60        # recalculate baseline every 60 seconds
-baseline_min_samples: 30            # need at least 30 samples before trusting baseline
+baseline_min_samples: 10            # need at least 10 samples before trusting baseline
 baseline_floor_mean: 1.0            # never let mean go below 1.0 req/s (avoids division issues)
 baseline_floor_stddev: 0.5          # never let stddev go below 0.5
 
