@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template_inline
+from flask import Flask, jsonify
 import psutil
 import time
 import threading
@@ -87,6 +87,22 @@ def metrics():
         "total_bans": _state.total_bans,
     })
 
+@app.route("/api/baseline-history")
+def baseline_history():
+    """Returns baseline recalculation history for the graph."""
+    if _state is None:
+        return jsonify([])
+    
+    history = _state.baseline_engine.recalc_history
+    return jsonify([
+        {
+            "timestamp": h["timestamp"],
+            "mean": round(h["mean"], 4),
+            "stddev": round(h["stddev"], 4),
+            "samples": h["samples"]
+        }
+        for h in history
+    ])
 
 # The dashboard HTML — a self-contained single-page app
 # It polls /api/metrics every 3 seconds and updates the display
@@ -230,6 +246,83 @@ DASHBOARD_HTML = """
         // Run immediately, then every 3 seconds
         refresh();
         setInterval(refresh, 3000);
+    </script>
+
+    <div class="section">
+        <h2>📈 Baseline Over Time</h2>
+        <canvas id="baseline-chart" height="80"></canvas>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <script>
+        // Initialize baseline chart
+        const ctx = document.getElementById('baseline-chart').getContext('2d');
+        const baselineChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Effective Mean (req/s)',
+                        data: [],
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'rgba(56,189,248,0.1)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'Stddev',
+                        data: [],
+                        borderColor: '#f87171',
+                        backgroundColor: 'rgba(248,113,113,0.1)',
+                        tension: 0.3,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { labels: { color: '#94a3b8' } }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#64748b', maxTicksLimit: 10 },
+                        grid: { color: '#1e293b' }
+                    },
+                    y: {
+                        ticks: { color: '#64748b' },
+                        grid: { color: '#1e293b' }
+                    }
+                }
+            }
+        });
+
+        // Fetch and update baseline chart
+        async function updateBaselineChart() {
+            try {
+                const res = await fetch('/api/baseline-history');
+                const data = await res.json();
+                
+                if (data.length === 0) return;
+                
+                // Format timestamps as HH:MM:SS
+                baselineChart.data.labels = data.map(d => {
+                    const date = new Date(d.timestamp * 1000);
+                    return date.toLocaleTimeString();
+                });
+                
+                baselineChart.data.datasets[0].data = data.map(d => d.mean);
+                baselineChart.data.datasets[1].data = data.map(d => d.stddev);
+                baselineChart.update();
+            } catch(e) {
+                console.error('Chart update failed:', e);
+            }
+        }
+
+        // Update chart every 60 seconds
+        updateBaselineChart();
+        setInterval(updateBaselineChart, 60000);
     </script>
 </body>
 </html>
